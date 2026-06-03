@@ -13,7 +13,7 @@ import Relatorios from '@/pages/Relatorios';
 import RegrasObrigatorias from '@/pages/RegrasObrigatorias';
 import { Toaster } from '@/components/ui/sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
 export const API = `${BACKEND_URL}/api`;
 
 export const AuthContext = React.createContext();

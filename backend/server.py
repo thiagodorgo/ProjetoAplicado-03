@@ -88,6 +88,37 @@ app = FastAPI(
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
+
+def parse_cors_origins(cors_origins: Optional[str]) -> List[str]:
+    if not cors_origins or not cors_origins.strip():
+        return ["*"]
+
+    cors_origins = cors_origins.strip().strip("\"'")
+    if cors_origins.startswith("[") and "](" in cors_origins:
+        cors_origins = cors_origins[1:cors_origins.index("](")]
+    elif cors_origins.startswith("[") and cors_origins.endswith("]"):
+        cors_origins = cors_origins[1:-1]
+
+    origins = [
+        origin.strip().strip("[]()\"'").strip()
+        for origin in cors_origins.split(",")
+    ]
+    return [origin for origin in origins if origin] or ["*"]
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "techsolutions-api"}
+
+
+@app.get("/api/")
+async def api_root():
+    return {
+        "message": "TechSolutions - Sistema de Treinamentos Obrigatórios",
+        "version": "2.0",
+        "foco": "Gestão de treinamentos para trabalhadores rurais (NR-31)"
+    }
+
 # =============== ENUMERADORES ===============
 # Aqui definimos nossos enumeradores para padronizar os valores no sistema
 class Modalidade(str, Enum):
@@ -904,7 +935,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=parse_cors_origins(os.environ.get("CORS_ORIGINS")),
     allow_methods=["*"],
     allow_headers=["*"],
 )
