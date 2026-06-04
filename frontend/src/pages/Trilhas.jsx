@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { API } from '@/App';
+import { API, AuthContext } from '@/App';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Route, Trash2 } from 'lucide-react';
+import { canWriteAdmin } from '@/utils/auth';
 
 export default function Trilhas() {
+  const { user } = useContext(AuthContext);
+  const canManageTrilhas = canWriteAdmin(user);
   const [trilhas, setTrilhas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -120,21 +123,22 @@ export default function Trilhas() {
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Trilhas de Aprendizagem</h1>
             <p className="text-gray-600">Organize cursos em trilhas de desenvolvimento</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg"
-                data-testid="create-trilha-button"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Nova Trilha
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Criar Nova Trilha</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+          {canManageTrilhas && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg"
+                  data-testid="create-trilha-button"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Nova Trilha
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar Nova Trilha</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="titulo">Título *</Label>
                   <Input
@@ -192,9 +196,10 @@ export default function Trilhas() {
                     Cancelar
                   </Button>
                 </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {trilhas.length === 0 ? (
@@ -217,16 +222,18 @@ export default function Trilhas() {
                     {trilha.descricao || 'Sem descrição'}
                   </p>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(trilha.id_trilha)}
-                    className="w-full text-red-600 hover:bg-red-50"
-                    data-testid={`delete-trilha-${trilha.id_trilha}`}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Deletar Trilha
-                  </Button>
+                  {canManageTrilhas && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(trilha.id_trilha)}
+                      className="w-full text-red-600 hover:bg-red-50"
+                      data-testid={`delete-trilha-${trilha.id_trilha}`}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Deletar Trilha
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}

@@ -45,8 +45,8 @@ export default function Login() {
             TechSolutions
           </CardTitle>
           <CardDescription className="text-base text-gray-600">
-            Sistema de Treinamentos Obrigatórios<br/>
-            <span className="text-sm text-gray-500">Conformidade NR-31 para Trabalho Rural</span>
+            Sistema de Gestão de Treinamentos Obrigatórios<br/>
+            <span className="text-sm text-gray-500">Entre com suas credenciais para continuar</span>
           </CardDescription>
         </CardHeader>
 
@@ -111,8 +111,21 @@ export default function Login() {
           </form>
 
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <p className="text-sm text-blue-900 font-medium mb-2">Acesso de Teste:</p>
-            <p className="text-xs text-blue-700">Crie um colaborador via API para fazer login</p>
+            <p className="text-sm text-blue-900 font-medium mb-3">Acessos de demonstração</p>
+            <div className="space-y-2 text-xs text-blue-800">
+              <div className="rounded-md bg-white/60 p-2">
+                <p className="font-medium">Administrador</p>
+                <p className="break-all">joao@example.com / senha123</p>
+              </div>
+              <div className="rounded-md bg-white/60 p-2">
+                <p className="font-medium">Colaborador</p>
+                <p className="break-all">senai@senai.com / senai</p>
+              </div>
+              <div className="rounded-md bg-white/60 p-2">
+                <p className="font-medium">Auditor</p>
+                <p className="break-all">ana.seguranca@example.com / senha123</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

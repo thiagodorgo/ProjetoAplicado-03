@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '@/components/Layout';
-import { API } from '@/App';
+import { API, AuthContext } from '@/App';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { canWriteAdmin, isColaborador } from '@/utils/auth';
 
 function getModalidadeLabel(modalidade) {
   const labels = {
@@ -18,6 +19,7 @@ function getModalidadeLabel(modalidade) {
 }
 
 export default function CursoDetalhes() {
+  const { user } = useContext(AuthContext);
   const { id } = useParams(); // id_curso
   const navigate = useNavigate();
   const [curso, setCurso] = useState(null);
@@ -106,7 +108,9 @@ export default function CursoDetalhes() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate('/cursos')}>Voltar</Button>
-            <Button onClick={inscrever} className="bg-green-600 text-white">Inscrever-se</Button>
+            {(canWriteAdmin(user) || isColaborador(user)) && (
+              <Button onClick={inscrever} className="bg-green-600 text-white">Inscrever-se</Button>
+            )}
           </div>
         </div>
 

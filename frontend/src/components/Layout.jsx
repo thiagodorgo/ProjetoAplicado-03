@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '@/App';
 import { Button } from '@/components/ui/button';
+import { canAccessRoute, PROFILE_IDS } from '@/utils/auth';
 import {
   LayoutDashboard,
   BookOpen,
@@ -23,14 +24,14 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/cursos', icon: BookOpen, label: 'Cursos' },
-    { path: '/trilhas', icon: Route, label: 'Trilhas' },
-    { path: '/colaboradores', icon: Users, label: 'Colaboradores' },
-    { path: '/meus-cursos', icon: GraduationCap, label: 'Meus Cursos' },
-    { path: '/regras', icon: Settings, label: 'Regras Obrigatórias' },
-    { path: '/relatorios', icon: BarChart3, label: 'Relatórios' },
-  ];
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', profiles: [PROFILE_IDS.ADMIN, PROFILE_IDS.COLABORADOR, PROFILE_IDS.AUDITOR] },
+    { path: '/cursos', icon: BookOpen, label: 'Cursos', profiles: [PROFILE_IDS.ADMIN, PROFILE_IDS.COLABORADOR, PROFILE_IDS.AUDITOR] },
+    { path: '/trilhas', icon: Route, label: 'Trilhas', profiles: [PROFILE_IDS.ADMIN, PROFILE_IDS.AUDITOR] },
+    { path: '/colaboradores', icon: Users, label: 'Colaboradores', profiles: [PROFILE_IDS.ADMIN] },
+    { path: '/meus-cursos', icon: GraduationCap, label: 'Meus Cursos', profiles: [PROFILE_IDS.ADMIN, PROFILE_IDS.COLABORADOR] },
+    { path: '/regras', icon: Settings, label: 'Regras Obrigatórias', profiles: [PROFILE_IDS.ADMIN] },
+    { path: '/relatorios', icon: BarChart3, label: 'Relatórios', profiles: [PROFILE_IDS.ADMIN, PROFILE_IDS.AUDITOR] },
+  ].filter(item => canAccessRoute(user, item.profiles));
 
   const isActive = (path) => location.pathname === path;
 

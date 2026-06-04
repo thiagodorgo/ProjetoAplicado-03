@@ -1,18 +1,7 @@
-import React, { useState, useEffect } from 'react';
-// Função utilitária para checar se usuário é admin
-function isAdmin() {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return false;
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.colaborador?.perfil?.permissoes?.includes('admin');
-  } catch {
-    return false;
-  }
-}
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { API } from '@/App';
+import { API, AuthContext } from '@/App';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,8 +14,12 @@ import { toast } from 'sonner';
 import { Plus, BookOpen, Clock, Users, Edit, Trash2, Search, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { canWriteAdmin, isColaborador } from '@/utils/auth';
 
 export default function Cursos() {
+  const { user } = useContext(AuthContext);
+  const canManageCursos = canWriteAdmin(user);
+  const canEnroll = canManageCursos || isColaborador(user);
   const navigate = useNavigate();
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -351,7 +344,7 @@ export default function Cursos() {
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Cursos</h1>
             <p className="text-gray-600">Gerencie todos os cursos do sistema</p>
           </div>
-          {/* Botão de adicionar curso sempre visível */}
+          {canManageCursos && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -484,6 +477,7 @@ export default function Cursos() {
                 </form>
               </DialogContent>
             </Dialog>
+          )}
           
         </div>
 
@@ -583,8 +577,10 @@ export default function Cursos() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <>
+                  {(canManageCursos || canEnroll) && (
+                    <div className="flex gap-2">
+                      {canManageCursos && (
+                        <>
                       <Button
                         variant="outline"
                         size="sm"
@@ -604,6 +600,9 @@ export default function Cursos() {
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
+                        </>
+                      )}
+                      {canEnroll && (
                       <Button
                         variant="default"
                         size="sm"
@@ -633,21 +632,22 @@ export default function Cursos() {
                       >
                         Inscrever-se
                       </Button>
-                    </>
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
-      {/* Dialog de Edição de Curso */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Curso</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEditSubmit} className="space-y-4">
+      {canManageCursos && (
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Curso</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
             <div>
               <Label htmlFor="edit_titulo">Título *</Label>
               <Input
@@ -755,9 +755,10 @@ export default function Cursos() {
                 Cancelar
               </Button>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </Layout>
   );
 }

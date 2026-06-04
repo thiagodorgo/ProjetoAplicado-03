@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { API } from '@/App';
+import { API, AuthContext } from '@/App';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Settings, Trash2 } from 'lucide-react';
+import { canWriteAdmin } from '@/utils/auth';
 
 export default function RegrasObrigatorias() {
+  const { user } = useContext(AuthContext);
+  const canManageRegras = canWriteAdmin(user);
   const [regras, setRegras] = useState([]);
   // Opções pré-cadastradas para cargos e áreas
   const cargos = [
@@ -133,17 +136,18 @@ const resetForm = () => {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Regras Obrigatórias</h1>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="open-regra-dialog">
-                <Plus className="w-4 h-4 mr-2" /> Nova Regra
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Criar Nova Regra Obrigatória</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+          {canManageRegras && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="open-regra-dialog">
+                  <Plus className="w-4 h-4 mr-2" /> Nova Regra
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar Nova Regra Obrigatória</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
 
                 <div>
                   <Label htmlFor="id_curso">Curso</Label>
@@ -242,9 +246,10 @@ const resetForm = () => {
                     Cancelar
                   </Button>
                 </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
         {loading ? (
           <div className="flex items-center justify-center h-96">
@@ -282,16 +287,18 @@ const resetForm = () => {
                     <p className="text-sm font-medium text-gray-500">Validade do Certificado</p>
                     <p className="text-base text-gray-900">{regra.validade_certificado_meses} meses</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(regra.id_regra)}
-                    className="w-full text-red-600 hover:bg-red-50 mt-4"
-                    data-testid={`delete-regra-${regra.id_regra}`}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Deletar Regra
-                  </Button>
+                  {canManageRegras && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(regra.id_regra)}
+                      className="w-full text-red-600 hover:bg-red-50 mt-4"
+                      data-testid={`delete-regra-${regra.id_regra}`}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Deletar Regra
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}

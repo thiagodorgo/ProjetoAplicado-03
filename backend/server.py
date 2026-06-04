@@ -472,6 +472,50 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Token inválido")
 
+def get_perfil_id(user: dict) -> Optional[int]:
+    try:
+        return int(user.get("id_perfil"))
+    except (TypeError, ValueError):
+        return None
+
+async def get_current_user(token: dict = Depends(verify_token)) -> dict:
+    user = None
+    user_id = token.get("sub")
+    email = token.get("email")
+
+    if user_id is not None:
+        try:
+            user = await db.colaboradores.find_one(
+                {"id_colaborador": int(user_id)},
+                {"_id": 0, "senha_hash": 0}
+            )
+        except (TypeError, ValueError):
+            user = None
+
+    if not user and email:
+        user = await db.colaboradores.find_one(
+            {"email": email},
+            {"_id": 0, "senha_hash": 0}
+        )
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário autenticado não encontrado")
+
+    return user
+
+async def require_authenticated(current_user: dict = Depends(get_current_user)) -> dict:
+    return current_user
+
+async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    if get_perfil_id(current_user) != 1:
+        raise HTTPException(status_code=403, detail="Permissão insuficiente: acesso exclusivo para administrador")
+    return current_user
+
+async def require_admin_or_auditor(current_user: dict = Depends(get_current_user)) -> dict:
+    if get_perfil_id(current_user) not in [1, 3]:
+        raise HTTPException(status_code=403, detail="Permissão insuficiente: acesso permitido para administrador ou auditor")
+    return current_user
+
 async def get_next_id(collection_name: str) -> int:
     # Geramos IDs sequenciais para nossas coleções do MongoDB
     counter = await db.counters.find_one_and_update(
@@ -567,7 +611,7 @@ from fastapi import Body
 @api_router.post("/curso_trilha")
 async def vincular_curso_trilha(
     payload: dict = Body(...),
-    token: dict = Depends(verify_token)
+    current_user: dict = Depends(require_admin)
 ):
     # payload: {id_curso, id_trilha, ordem, obrigatorio, id_prerequisito (opcional)}
     id_curso = payload.get("id_curso")
@@ -594,19 +638,19 @@ async def vincular_curso_trilha(
     return {"message": "Curso vinculado à trilha com sucesso", **doc}
 
 @api_router.post("/cargos", response_model=Cargo)
-async def create_cargo(cargo: CargoCreate, token: dict = Depends(verify_token)):
+async def create_cargo(cargo: CargoCreate, current_user: dict = Depends(require_admin)):
     id_cargo = await get_next_id("cargos")
     doc = {"id_cargo": id_cargo, **cargo.model_dump()}
     await db.cargos.insert_one(doc)
     return Cargo(**doc)
 
 @api_router.get("/cargos", response_model=List[Cargo])
-async def get_cargos(token: dict = Depends(verify_token)):
+async def get_cargos(current_user: dict = Depends(require_admin)):
     cargos = await db.cargos.find({}, {"_id": 0}).to_list(1000)
     return cargos
 
 @api_router.delete("/cargos/{id_cargo}")
-async def delete_cargo(id_cargo: int, token: dict = Depends(verify_token)):
+async def delete_cargo(id_cargo: int, current_user: dict = Depends(require_admin)):
     result = await db.cargos.delete_one({"id_cargo": id_cargo})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Cargo não encontrado")
@@ -616,14 +660,14 @@ async def delete_cargo(id_cargo: int, token: dict = Depends(verify_token)):
 # Controlamos perfis de acesso e permissões
 
 @api_router.post("/perfis", response_model=Perfil)
-async def create_perfil(perfil: PerfilCreate, token: dict = Depends(verify_token)):
+async def create_perfil(perfil: PerfilCreate, current_user: dict = Depends(require_admin)):
     id_perfil = await get_next_id("perfis")
     doc = {"id_perfil": id_perfil, **perfil.model_dump()}
     await db.perfis.insert_one(doc)
     return Perfil(**doc)
 
 @api_router.get("/perfis", response_model=List[Perfil])
-async def get_perfis(token: dict = Depends(verify_token)):
+async def get_perfis(current_user: dict = Depends(require_admin)):
     perfis = await db.perfis.find({}, {"_id": 0}).to_list(1000)
     return perfis
 
@@ -631,7 +675,7 @@ async def get_perfis(token: dict = Depends(verify_token)):
 # Gerenciamos nossos trabalhadores rurais
 
 @api_router.get("/colaboradores", response_model=List[Colaborador])
-async def get_colaboradores(ativo: Optional[bool] = None, token: dict = Depends(verify_token)):
+async def get_colaboradores(ativo: Optional[bool] = None, current_user: dict = Depends(require_admin)):
     query = {}
     if ativo is not None:
         query["ativo"] = ativo
@@ -639,7 +683,7 @@ async def get_colaboradores(ativo: Optional[bool] = None, token: dict = Depends(
     return colaboradores
 
 @api_router.get("/colaboradores/{id_colaborador}", response_model=Colaborador)
-async def get_colaborador(id_colaborador: int, token: dict = Depends(verify_token)):
+async def get_colaborador(id_colaborador: int, current_user: dict = Depends(require_admin)):
     colab = await db.colaboradores.find_one({"id_colaborador": id_colaborador}, {"_id": 0, "senha_hash": 0})
     if not colab:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
@@ -649,7 +693,7 @@ async def get_colaborador(id_colaborador: int, token: dict = Depends(verify_toke
 # Criamos e gerenciamos os treinamentos obrigatórios
 
 @api_router.post("/cursos", response_model=Curso)
-async def create_curso(curso: CursoCreate, token: dict = Depends(verify_token)):
+async def create_curso(curso: CursoCreate, current_user: dict = Depends(require_admin)):
     # Permissão aberta para todos os usuários
     id_curso = await get_next_id("cursos")
     data = curso.model_dump()
@@ -670,7 +714,7 @@ async def create_curso(curso: CursoCreate, token: dict = Depends(verify_token)):
     return Curso(**{k: v for k, v in doc.items() if k != "slug"})
 
 @api_router.get("/cursos", response_model=List[Curso])
-async def get_cursos(tipo: Optional[TipoTreinamento] = None, token: dict = Depends(verify_token)):
+async def get_cursos(tipo: Optional[TipoTreinamento] = None, current_user: dict = Depends(require_authenticated)):
     query = {}
     if tipo:
         query["tipo_treinamento"] = tipo.value
@@ -678,14 +722,14 @@ async def get_cursos(tipo: Optional[TipoTreinamento] = None, token: dict = Depen
     return cursos
 
 @api_router.get("/cursos/{id_curso}", response_model=Curso)
-async def get_curso(id_curso: int, token: dict = Depends(verify_token)):
+async def get_curso(id_curso: int, current_user: dict = Depends(require_authenticated)):
     curso = await db.cursos.find_one({"id_curso": id_curso}, {"_id": 0})
     if not curso:
         raise HTTPException(status_code=404, detail="Curso não encontrado")
     return Curso(**curso)
 
 @api_router.put("/cursos/{id_curso}", response_model=Curso)
-async def update_curso(id_curso: int, update: CursoUpdate, token: dict = Depends(verify_token)):
+async def update_curso(id_curso: int, update: CursoUpdate, current_user: dict = Depends(require_admin)):
     existing = await db.cursos.find_one({"id_curso": id_curso})
     if not existing:
         raise HTTPException(status_code=404, detail="Curso não encontrado")
@@ -730,7 +774,7 @@ async def update_curso(id_curso: int, update: CursoUpdate, token: dict = Depends
     return Curso(**updated)
 
 @api_router.delete("/cursos/{id_curso}")
-async def delete_curso(id_curso: int, token: dict = Depends(verify_token)):
+async def delete_curso(id_curso: int, current_user: dict = Depends(require_admin)):
     # Permissão aberta para todos os usuários
     result = await db.cursos.delete_one({"id_curso": id_curso})
     if result.deleted_count == 0:
@@ -742,7 +786,7 @@ async def delete_curso(id_curso: int, token: dict = Depends(verify_token)):
 # Organizamos cursos em trilhas de desenvolvimento
 
 @api_router.post("/trilhas", response_model=Trilha)
-async def create_trilha(trilha: TrilhaCreate, token: dict = Depends(verify_token)):
+async def create_trilha(trilha: TrilhaCreate, current_user: dict = Depends(require_admin)):
     # Permissão aberta para todos os usuários
     id_trilha = await get_next_id("trilhas")
     doc = {"id_trilha": id_trilha, **trilha.model_dump()}
@@ -750,7 +794,7 @@ async def create_trilha(trilha: TrilhaCreate, token: dict = Depends(verify_token
     return Trilha(**doc)
 
 @api_router.get("/trilhas", response_model=List[Trilha])
-async def get_trilhas(obrigatoria: Optional[bool] = None, token: dict = Depends(verify_token)):
+async def get_trilhas(obrigatoria: Optional[bool] = None, current_user: dict = Depends(require_authenticated)):
     query = {}
     if obrigatoria is not None:
         query["obrigatoria"] = obrigatoria
@@ -758,7 +802,7 @@ async def get_trilhas(obrigatoria: Optional[bool] = None, token: dict = Depends(
     return trilhas
 
 @api_router.get("/cursos/{id_curso}/trilhas", response_model=List[Trilha])
-async def get_trilhas_do_curso(id_curso: int, token: dict = Depends(verify_token)):
+async def get_trilhas_do_curso(id_curso: int, current_user: dict = Depends(require_authenticated)):
     # Busca todos os ids de trilha associados ao curso
     curso_trilhas = await db.curso_trilha.find({"id_curso": id_curso}, {"_id": 0, "id_trilha": 1}).to_list(100)
     trilha_ids = [ct["id_trilha"] for ct in curso_trilhas]
@@ -768,7 +812,7 @@ async def get_trilhas_do_curso(id_curso: int, token: dict = Depends(verify_token
     return trilhas
 
 @api_router.delete("/trilhas/{id_trilha}")
-async def delete_trilha(id_trilha: int, token: dict = Depends(verify_token)):
+async def delete_trilha(id_trilha: int, current_user: dict = Depends(require_admin)):
     # Permissão aberta para todos os usuários
     result = await db.trilhas.delete_one({"id_trilha": id_trilha})
     if result.deleted_count == 0:
@@ -779,7 +823,7 @@ async def delete_trilha(id_trilha: int, token: dict = Depends(verify_token)):
 # Definimos regras de treinamentos obrigatórios por cargo/área
 
 @api_router.post("/regras-obrigatorias", response_model=RegraObrigatorio)
-async def create_regra(regra: RegraObrigatorioCreate, token: dict = Depends(verify_token)):
+async def create_regra(regra: RegraObrigatorioCreate, current_user: dict = Depends(require_admin)):
     if not regra.id_curso and not regra.id_trilha:
         raise HTTPException(status_code=400, detail="Deve especificar id_curso ou id_trilha")
     
@@ -789,12 +833,12 @@ async def create_regra(regra: RegraObrigatorioCreate, token: dict = Depends(veri
     return RegraObrigatorio(**doc)
 
 @api_router.get("/regras-obrigatorias", response_model=List[RegraObrigatorio])
-async def get_regras(token: dict = Depends(verify_token)):
+async def get_regras(current_user: dict = Depends(require_admin_or_auditor)):
     regras = await db.regras_obrigatorias.find({}, {"_id": 0}).to_list(1000)
     return regras
 
 @api_router.delete("/regras-obrigatorias/{id_regra}")
-async def delete_regra(id_regra: int, token: dict = Depends(verify_token)):
+async def delete_regra(id_regra: int, current_user: dict = Depends(require_admin)):
     result = await db.regras_obrigatorias.delete_one({"id_regra": id_regra})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Regra não encontrada")
@@ -804,7 +848,7 @@ async def delete_regra(id_regra: int, token: dict = Depends(verify_token)):
 # Gerenciamos inscrições dos colaboradores nos cursos
 
 @api_router.post("/inscricoes", response_model=Inscricao)
-async def create_inscricao(inscricao: InscricaoCreate, token: dict = Depends(verify_token)):
+async def create_inscricao(inscricao: InscricaoCreate, current_user: dict = Depends(require_authenticated)):
     id_inscricao = await get_next_id("inscricoes")
     doc = {
         "id_inscricao": id_inscricao,
@@ -841,7 +885,7 @@ async def get_inscricoes(
     id_colaborador: Optional[int] = None,
     id_curso: Optional[int] = None,
     status: Optional[StatusInscricao] = None,
-    token: dict = Depends(verify_token)
+    current_user: dict = Depends(require_authenticated)
 ):
     query = {}
     if id_colaborador:
@@ -865,7 +909,7 @@ async def get_inscricoes(
 # Emitimos e validamos certificados digitais
 
 @api_router.post("/certificados", response_model=Certificado)
-async def create_certificado(certificado: CertificadoCreate, token: dict = Depends(verify_token)):
+async def create_certificado(certificado: CertificadoCreate, current_user: dict = Depends(require_admin)):
     inscricao = await db.inscricoes.find_one({"id_inscricao": certificado.id_inscricao})
     if not inscricao:
         raise HTTPException(status_code=404, detail="Inscrição não encontrada")
@@ -891,7 +935,7 @@ async def create_certificado(certificado: CertificadoCreate, token: dict = Depen
 async def get_certificados(
     id_inscricao: Optional[int] = None,
     status: Optional[str] = None,
-    token: dict = Depends(verify_token)
+    current_user: dict = Depends(require_admin_or_auditor)
 ):
     query = {}
     if id_inscricao:
@@ -911,7 +955,7 @@ async def get_certificados(
 # Fornecemos estatísticas e relatórios do sistema
 
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(token: dict = Depends(verify_token)):
+async def get_dashboard_stats(current_user: dict = Depends(require_admin_or_auditor)):
     total_cursos = await db.cursos.count_documents({})
     total_colaboradores = await db.colaboradores.count_documents({"ativo": True})
     total_inscricoes = await db.inscricoes.count_documents({})
@@ -970,7 +1014,7 @@ async def ensure_indexes():
 @api_router.post("/curso_trilha")
 async def vincular_curso_trilha(
     payload: dict = Body(...),
-    token: dict = Depends(verify_token)
+    current_user: dict = Depends(require_admin)
 ):
     # payload: {id_curso, id_trilha, ordem, obrigatorio, id_prerequisito (opcional)}
     id_curso = payload.get("id_curso")
