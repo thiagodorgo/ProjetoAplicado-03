@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import '@/App.css';
 import Login from '@/pages/Login';
@@ -71,7 +71,7 @@ function App() {
     <AuthContext.Provider value={{ user, login, logout }}>
       <div className="App">
         <Toaster position="top-right" richColors />
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route path="/" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
@@ -84,7 +84,7 @@ function App() {
             <Route path="/relatorios" element={<ProtectedRoute user={user} allowedProfiles={[PROFILE_IDS.ADMIN, PROFILE_IDS.AUDITOR]}><Relatorios /></ProtectedRoute>} />
             <Route path="/regras" element={<ProtectedRoute user={user} allowedProfiles={[PROFILE_IDS.ADMIN]}><RegrasObrigatorias /></ProtectedRoute>} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </div>
     </AuthContext.Provider>
   );
