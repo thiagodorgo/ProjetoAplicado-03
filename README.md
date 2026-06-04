@@ -1,97 +1,135 @@
-# TechSolutions – Sistema de Treinamentos Obrigatórios
+# TechSolutions — Sistema de Treinamentos Obrigatórios
 
-Projeto acadêmico da entrega AV4 da Unidade Curricular Projeto Aplicado.
+Sistema web acadêmico para a entrega AV4 — Desenvolvimento do MVP, da Unidade Curricular Projeto Aplicado.
 
-## Descrição
+## Problema
 
-Empresas ainda controlam treinamentos obrigatórios por planilhas, e-mails e cobranças manuais. Esse processo gera retrabalho, dificulta a rastreabilidade e aumenta o risco de não conformidade em auditorias.
+Empresas ainda controlam treinamentos obrigatórios com planilhas, e-mails e processos manuais. Esse modelo dificulta rastreabilidade, acompanhamento de pendências, controle por cargo/perfil e comprovação de conformidade em auditorias.
 
-O TechSolutions é um sistema web para gestão de treinamentos obrigatórios, com cadastro de colaboradores, áreas, cargos, perfis, cursos, trilhas, regras de obrigatoriedade, inscrições, progresso e dashboard de conformidade.
+## Solução
 
-## Integrantes
+O TechSolutions centraliza a gestão de treinamentos obrigatórios em uma aplicação web com autenticação por perfil, gestão de cursos, trilhas, colaboradores, regras obrigatórias, jornada do colaborador e relatórios de conformidade.
 
-- Thiago
-- Fabricio
-- Pettrin
-- Joseph
+## Contexto Acadêmico
+
+- AV1 — Diagnóstico e Backlog: identificação do problema, requisitos funcionais e backlog inicial.
+- AV2 — UX/UI: definição das jornadas de Administrador/Gestor/RH, Colaborador e Auditor/Compliance.
+- AV3 — Arquitetura e Cloud: planejamento da separação entre frontend, backend e banco de dados em nuvem.
+- AV4 — MVP Funcional: desenvolvimento, publicação em cloud, validação dos fluxos e documentação final.
+
+## Links Finais
+
+- Sistema HTTPS: https://d3rp0v05veneoq.cloudfront.net
+- API HTTPS / Swagger: https://d2imboazq11lsc.cloudfront.net/docs
+- Health check: https://d2imboazq11lsc.cloudfront.net/health
+- Repositório GitHub: https://github.com/thiagodorgo/ProjetoAplicado-03
+
+## Credenciais de Teste
+
+- Administrador: `joao@example.com` / `senha123`
+- Colaborador: `senai@senai.com` / `senai`
+- Auditor: `ana.seguranca@example.com` / `senha123`
 
 ## Tecnologias
 
-- Backend: FastAPI
-- Frontend: React
-- Banco de dados: MongoDB
-- Banco em cloud: MongoDB Atlas
-- Deploy do backend: AWS Elastic Beanstalk
-- Deploy do frontend: AWS S3 + CloudFront
-- Autenticação: JWT
-- Senhas: hash com bcrypt/passlib, conforme implementação existente
+Frontend:
 
-## Fluxos principais do MVP
+- React
+- Axios
+- React Router com HashRouter
+- Componentes UI existentes no projeto
 
-- Fluxo 1: Login e autenticação por token.
-- Fluxo 2: Gestão administrativa de áreas, cargos, perfis, colaboradores, cursos e regras obrigatórias.
-- Fluxo 3: Jornada do colaborador com visualização de cursos, inscrição, progresso e status.
-- Fluxo 4: Dashboard e relatórios de conformidade.
+Backend:
 
-## Variáveis de ambiente
+- Python
+- FastAPI
+- Uvicorn
+- JWT
+- bcrypt/passlib, conforme implementação existente
+- Motor/PyMongo para MongoDB
 
-As variáveis reais de produção devem ser configuradas no ambiente de execução, como Elastic Beanstalk e CloudFront/S3, e nunca devem ser versionadas.
+Banco:
 
-### Exemplo de `backend/.env`
+- MongoDB Atlas
+- Banco: `techsolutions_treinamentos`
 
-```env
-MONGO_URL="mongodb+srv://<usuario>:<senha>@cluster0.rxtu0xk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-DB_NAME="techsolutions_treinamentos"
-CORS_ORIGINS="http://localhost:3000"
-JWT_SECRET="troque-por-um-segredo-seguro"
-```
+Cloud e versionamento:
 
-Para usar MongoDB local em desenvolvimento:
+- AWS Elastic Beanstalk
+- AWS S3 Website
+- AWS CloudFront
+- GitHub
 
-```env
-MONGO_URL="mongodb://localhost:27017/"
-DB_NAME="techsolutions_treinamentos"
-CORS_ORIGINS="http://localhost:3000"
-JWT_SECRET="troque-por-um-segredo-seguro"
-```
+## Arquitetura em Cloud
 
-### Exemplo de `frontend/.env`
+O usuário acessa o frontend React por HTTPS via CloudFront. O frontend consome a API FastAPI também exposta por CloudFront HTTPS, que encaminha as requisições para o ambiente Python no AWS Elastic Beanstalk. O backend persiste os dados no MongoDB Atlas. O código-fonte é versionado no GitHub.
 
-```env
-REACT_APP_BACKEND_URL="http://localhost:8000"
-```
+## Fluxos Validados no MVP
 
-## Como rodar localmente
+- Fluxo 1: Login e controle de acesso por perfil.
+- Fluxo 2: Gestão administrativa de cursos, trilhas, colaboradores e regras obrigatórias.
+- Fluxo 3: Jornada do colaborador com Meus Cursos, status e progresso.
+- Fluxo 4: Relatórios e conformidade para administrador e auditor.
+
+## Perfis de Acesso
+
+Administrador:
+
+- Dashboard
+- Cursos
+- Trilhas
+- Colaboradores
+- Regras obrigatórias
+- Relatórios
+- Meus cursos
+
+Colaborador:
+
+- Dashboard pessoal
+- Cursos
+- Meus cursos
+
+Auditor:
+
+- Dashboard de conformidade
+- Cursos
+- Trilhas
+- Relatórios
+
+## Como Rodar Localmente
 
 ### Backend
 
-Pré-requisitos:
+Crie um arquivo local `backend/.env` com placeholders como no exemplo abaixo. Não use secrets reais em arquivos versionados.
 
-- Python 3.10+
-- MongoDB local ou MongoDB Atlas
+```env
+MONGO_URL="mongodb+srv://<usuario>:<senha>@cluster0.exemplo.mongodb.net/?retryWrites=true&w=majority"
+DB_NAME="techsolutions_treinamentos"
+JWT_SECRET="troque-por-um-segredo-local"
+CORS_ORIGINS="http://localhost:3000"
+```
 
 Comandos:
 
 ```powershell
 cd backend
-python -m venv venv
-.\venv\Scripts\Activate
 pip install -r requirements.txt
 uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
-Endpoints úteis:
+Endpoints locais úteis:
 
-- Health check: `http://localhost:8000/health`
+- API: `http://localhost:8000/api/`
 - Swagger: `http://localhost:8000/docs`
-- API raiz: `http://localhost:8000/api/`
+- Health check: `http://localhost:8000/health`
 
 ### Frontend
 
-Pré-requisitos:
+Crie um arquivo local `frontend/.env`:
 
-- Node.js
-- npm
+```env
+REACT_APP_BACKEND_URL="http://localhost:8000"
+```
 
 Comandos:
 
@@ -101,85 +139,64 @@ npm install --legacy-peer-deps
 npm start
 ```
 
-Aplicação local:
-
-- `http://localhost:3000`
+Aplicação local: `http://localhost:3000`
 
 ## Build
 
-### Backend
-
-O backend pode ser iniciado no mesmo formato esperado pelo Elastic Beanstalk:
-
-```powershell
-cd backend
-uvicorn server:app --host 0.0.0.0 --port 8000
-```
-
-### Frontend
+Frontend:
 
 ```powershell
 cd frontend
-npm install --legacy-peer-deps
 npm run build
 ```
 
-A pasta gerada será `frontend/build/`.
-
-## Usuários de teste
-
-Se o banco estiver vazio, execute o script de criação de usuários:
+Backend:
 
 ```powershell
 cd backend
-python scripts_create_user.py
+python -m py_compile server.py
 ```
 
-Credenciais criadas pelo script:
+## Deploy
 
-- Admin: `joao@example.com` / `senha123`
-- Aluno: `senai@senai.com` / `senai`
+Resumo do deploy final:
 
-Essas credenciais dependem da execução do script no banco configurado em `MONGO_URL` e `DB_NAME`.
+- Backend publicado no AWS Elastic Beanstalk usando `backend/Procfile`.
+- Variáveis reais configuradas no Elastic Beanstalk, nunca no repositório.
+- Frontend buildado com React e enviado ao S3 Website.
+- CloudFront usado para HTTPS do frontend.
+- CloudFront usado para HTTPS do backend, evitando Mixed Content entre frontend HTTPS e API.
+- CORS ajustado com `CORS_ORIGINS` para permitir o domínio HTTPS do frontend.
 
-## Deploy na AWS
+Detalhes operacionais estão em [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md).
 
-### Backend no Elastic Beanstalk
+## Decisões Técnicas Importantes
 
-1. Criar um ambiente Python no AWS Elastic Beanstalk.
-2. Publicar o conteúdo da pasta `backend/`.
-3. Garantir que o arquivo `Procfile` esteja presente em `backend/`.
-4. Configurar as variáveis de ambiente no Elastic Beanstalk:
-   - `MONGO_URL`
-   - `DB_NAME`
-   - `JWT_SECRET`
-   - `CORS_ORIGINS`
-5. Usar `DB_NAME="techsolutions_treinamentos"`.
-6. Validar o deploy acessando `/health`, `/docs` e `/api/`.
+- Uso de HashRouter para evitar erro 404 em rotas internas da SPA hospedada em S3/CloudFront.
+- CloudFront no backend para garantir HTTPS ponta a ponta.
+- MongoDB Atlas para persistência em nuvem.
+- Separação entre frontend React e backend FastAPI.
+- Controle por perfil aplicado no frontend e reforçado no backend para endpoints administrativos.
+- Dashboards personalizados por perfil: admin, colaborador e auditor.
 
-### Banco no MongoDB Atlas
+## Documentação Complementar
 
-1. Criar o cluster no MongoDB Atlas.
-2. Criar usuário e senha do banco.
-3. Liberar o acesso de rede necessário para o Elastic Beanstalk.
-4. Configurar a connection string em `MONGO_URL` no Elastic Beanstalk.
-5. Não versionar a connection string real.
-
-### Frontend no S3 + CloudFront
-
-1. Criar o arquivo `frontend/.env` com `REACT_APP_BACKEND_URL` apontando para a URL pública do backend.
-2. Gerar o build com `npm run build`.
-3. Enviar o conteúdo de `frontend/build/` para um bucket S3 configurado para hospedagem estática ou origem do CloudFront.
-4. Criar ou atualizar a distribuição CloudFront.
-5. Atualizar `CORS_ORIGINS` no Elastic Beanstalk com o domínio do CloudFront, por exemplo:
-
-```env
-CORS_ORIGINS="http://localhost:3000,https://dominio-cloudfront.net"
-```
+- [Deploy AWS](docs/DEPLOY_AWS.md)
+- [Fluxos do MVP](docs/FLUXOS_MVP.md)
+- [Jornada do Projeto](docs/JORNADA_PROJETO.md)
+- [Checklist AV4](docs/CHECKLIST_AV4.md)
 
 ## Segurança
 
-- Não versionar arquivos `.env`.
-- Não inserir senha real, `MONGO_URL` real ou `JWT_SECRET` real no código.
-- Configurar secrets reais somente no ambiente local privado ou nas variáveis de ambiente do Elastic Beanstalk.
-- Os exemplos deste README usam placeholders e não devem ser tratados como credenciais de produção.
+- Não versionar `.env`.
+- Não versionar secrets.
+- Não inserir `MONGO_URL` real, senha do MongoDB Atlas ou `JWT_SECRET` real no código ou documentação.
+- Configurar variáveis reais apenas no ambiente local privado ou nos serviços de cloud.
+- Trocar senhas e segredos em uma produção real.
+
+## Integrantes
+
+- Thiago
+- Fabricio
+- Pettrin
+- Joseph

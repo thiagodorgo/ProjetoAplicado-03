@@ -1,13 +1,62 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Environment files and secrets
+.env
+*.env
+*.env.*
+!.env.example
+*token.json*
+*credentials.json*
 
-# IDE and editors
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+
+# Node and frontend builds
+node_modules/
+/node_modules/
+frontend/node_modules/
+build/
+/build/
+frontend/build/
+dist/
+/dist/
+
+# Logs and local runtime files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dump.rdb
+
+# IDE and OS files
 .idea/
 .vscode/
+.DS_Store
 
-# Dependencies
-node_modules/
-/node_modules
-/.pnp
+# Deployment and caches
+.elasticbeanstalk/
+.vercel/
+.cache/
+.next/
+out/
+*.tsbuildinfo
+
+# Archives and binary deploy bundles
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.pack
+*.deb
+*.dylib
+*.pem
+
+# Misc local tooling
+.pnp
 .pnp.js
 .yarn/install-state.gz
 .yarn/*
@@ -15,89 +64,7 @@ node_modules/
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
-
-# Production builds
-/build
-dist/
-dist
-
-# Environment files (comprehensive coverage)
-
-*token.json*
-*credentials.json*
-
-# Logs and debug files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-dump.rdb
-
-# System files
-.DS_Store
-*.pem
-
-# Python
-__pycache__/
-*pyc*
-venv/
-.venv/
-
-# Development tools
 chainlit.md
 .chainlit
 .ipynb_checkpoints/
 .ac
-
-# Deployment
-.vercel
-
-# Data and databases
-agenthub/agents/youtube/db
-
-# Archive files and large assets
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
-*.pack
-*.deb
-*.dylib
-
-# Build caches
-.cache/
-
-# Mobile development
-android-sdk/ -e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
